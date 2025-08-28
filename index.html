@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YOUDOC - Symptom Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1c1c1c;
+      color: white;
+      text-align: center;
+      padding: 50px;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #2b2b2b;
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      position: relative;
+      z-index: 1;
+    }
+
+    input {
+      padding: 10px;
+      width: 80%;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #00b894;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #019170;
+    }
+
+    #output {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #ffeaa7;
+    }
+
+    /* Watermark */
+    body::before {
+      content: "Welcome to YOUDOC";
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 70px;
+      color: rgba(255, 255, 255, 0.05);
+      font-weight: bold;
+      font-family: 'Georgia', serif;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 0;
+      animation: fadeInOut 6s infinite ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.05; }
+      50% { opacity: 0.15; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>YOUDOC Symptom Checker</h1>
+    <input type="text" id="symptomInput" placeholder="Enter your symptom">
+    <button onclick="checkSymptom()">Check</button>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    // Example large symptom list (can be expanded to 200+)
+    const symptoms = {
+      "fever": "You may have an infection or flu.",
+      "cough": "Could be common cold, flu, or allergy.",
+      "headache": "Possible stress, dehydration, or migraine.",
+      "sore throat": "May indicate infection or cold.",
+      "stomach pain": "Could be indigestion or gastritis.",
+      "chest pain": "Seek medical help immediately.",
+      "fatigue": "Might be due to stress, lack of sleep, or anemia.",
+      "dizziness": "Could be dehydration, low BP, or inner ear issue.",
+      "nausea": "May be food poisoning or stomach infection.",
+      "back pain": "Can be posture issue, strain, or disc problem."
+    };
+
+    // Levenshtein distance function
+    function levenshtein(a, b) {
+      const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+      for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+      for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          if (a[i - 1] === b[j - 1]) dp[i][j] = dp[i - 1][j - 1];
+          else dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      return dp[a.length][b.length];
+    }
+
+    // Find closest symptom
+    function findClosestSymptom(input) {
+      let minDist = Infinity;
+      let closest = null;
+      for (let key in symptoms) {
+        const dist = levenshtein(input.toLowerCase(), key.toLowerCase());
+        if (dist < minDist) {
+          minDist = dist;
+          closest = key;
+        }
+      }
+      return minDist <= 3 ? closest : null; // tolerance
+    }
+
+    // Main function
+    function checkSymptom() {
+      const input = document.getElementById("symptomInput").value.trim();
+      const output = document.getElementById("output");
+      if (!input) {
+        output.innerText = "⚠ Please enter a symptom.";
+        return;
+      }
+      const closest = findClosestSymptom(input);
+      if (closest) {
+        output.innerText = `✅ Did you mean "${closest}"? → ${symptoms[closest]}`;
+      } else {
+        output.innerText = "❌ Symptom not recognized. Please consult a doctor.";
+      }
+    }
+
+    // Allow pressing Enter
+    document.getElementById("symptomInput").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        checkSymptom();
+      }
+    });
+  </script>
+</body>
+</html>
